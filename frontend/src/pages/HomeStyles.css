@@ -1,0 +1,22 @@
+/* Keep styles minimal to avoid overriding Tailwind's responsive utilities */
+.home {
+  background-color: #f9fafb;
+}
+
+.home .section-title {
+  letter-spacing: 0.2px;
+}
+
+.home .section-subtitle {
+  color: #4b5563;
+}
+
+.home .category-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.home .category-card:hover {
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+  
