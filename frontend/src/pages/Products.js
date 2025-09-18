@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import SearchBar from '../components/SearchBar';
 import { productsAPI } from '../services/api';
 import './Products.css';
+import PriceRangeFilter from '../components/PriceRangeFilter';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -12,8 +13,10 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [priceRange, setPriceRange] = useState([0, 100000]);
-  const [maxPrice, setMaxPrice] = useState(100000);
+  // Hard bounds requested by user
+  const HARD_MIN_PRICE = 100;
+  const HARD_MAX_PRICE = 1000000;
+  const [priceRange, setPriceRange] = useState([HARD_MIN_PRICE, HARD_MAX_PRICE]);
   const [sortBy, setSortBy] = useState('name');
 
   const categories = [
@@ -37,39 +40,16 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      console.log('=== FETCHING PRODUCTS FOR CUSTOMERS ===');
       const response = await productsAPI.getProducts();
-  
-      console.log("Frontend products response:", response.data);
-      console.log("Products array:", response.data.products);
-      console.log("Products length:", response.data.products?.length);
-  
-      // Handle both cases: if backend returns { products: [...] } or just [...]
       const productsData = response.data.products || response.data || [];
-      console.log("Final products data:", productsData);
-      console.log("Final products length:", productsData.length);
-  
       setProducts(productsData);
-      
-      // Calculate dynamic price range based on actual products
-      if (productsData.length > 0) {
-        const prices = productsData.map(p => p.price).filter(price => price != null);
-        if (prices.length > 0) {
-          const minPrice = Math.min(...prices);
-          const maxPrice = Math.max(...prices);
-          setMaxPrice(maxPrice);
-          setPriceRange([minPrice, maxPrice]);
-        }
-      }
     } catch (error) {
       console.error('Error fetching products:', error);
-      setProducts([]); // ensure products state is at least an empty array
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
-  
-  
 
   const filterProducts = () => {
     let filtered = [...products];
@@ -87,10 +67,16 @@ const Products = () => {
       filtered = filtered.filter(product => product.category === selectedCategory);
     }
 
-    // Filter by price range
-    filtered = filtered.filter(product => 
-      product.price >= priceRange[0] && product.price <= priceRange[1]
-    );
+    // Clamp the working range to hard bounds and filter by price
+    const [minP, maxP] = [
+      Math.max(HARD_MIN_PRICE, Math.min(priceRange[0], HARD_MAX_PRICE)),
+      Math.max(HARD_MIN_PRICE, Math.min(priceRange[1], HARD_MAX_PRICE))
+    ];
+    filtered = filtered.filter(product => {
+      const price = Number(product.price);
+      if (Number.isNaN(price)) return false; // skip items without numeric price
+      return price >= minP && price <= maxP;
+    });
 
     // Sort products
     filtered.sort((a, b) => {
@@ -120,43 +106,21 @@ const Products = () => {
   };
 
   const handleMinPriceChange = (value) => {
-    const newMin = parseInt(value);
-    if (newMin <= priceRange[1]) {
-      setPriceRange([newMin, priceRange[1]]);
-    }
+    const newMin = Math.max(HARD_MIN_PRICE, Math.min(Number(value) || HARD_MIN_PRICE, priceRange[1]));
+    setPriceRange([newMin, priceRange[1]]);
   };
 
   const handleMaxPriceChange = (value) => {
-    const newMax = parseInt(value);
-    if (newMax >= priceRange[0]) {
-      setPriceRange([priceRange[0], newMax]);
-    }
+    const newMax = Math.min(HARD_MAX_PRICE, Math.max(Number(value) || HARD_MAX_PRICE, priceRange[0]));
+    setPriceRange([priceRange[0], newMax]);
   };
-
-  // Update CSS custom properties for visual range indicator
-  useEffect(() => {
-    const sliderContainer = document.querySelector('.price-slider-container');
-    if (sliderContainer && maxPrice > 0) {
-      const minPercent = (priceRange[0] / maxPrice) * 100;
-      const maxPercent = (priceRange[1] / maxPrice) * 100;
-      sliderContainer.style.setProperty('--min-percent', minPercent);
-      sliderContainer.style.setProperty('--max-percent', maxPercent);
-    }
-  }, [priceRange, maxPrice]);
 
   const handleSortChange = (sort) => {
     setSortBy(sort);
   };
 
   const resetPriceRange = () => {
-    if (products.length > 0) {
-      const prices = products.map(p => p.price).filter(price => price != null);
-      if (prices.length > 0) {
-        const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
-        setPriceRange([minPrice, maxPrice]);
-      }
-    }
+    setPriceRange([HARD_MIN_PRICE, HARD_MAX_PRICE]);
   };
 
   if (loading) {
@@ -199,65 +163,12 @@ const Products = () => {
             </div>
 
             <div className="filter-section">
-              <h3>Price Range</h3>
-              <div className="price-range">
-                <div className="price-inputs">
-                  <div className="price-input-group">
-                    <label>Min Price</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={maxPrice}
-                      value={priceRange[0]}
-                      onChange={(e) => handleMinPriceChange(e.target.value)}
-                      className="price-input"
-                    />
-                  </div>
-                  <div className="price-input-group">
-                    <label>Max Price</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={maxPrice}
-                      value={priceRange[1]}
-                      onChange={(e) => handleMaxPriceChange(e.target.value)}
-                      className="price-input"
-                    />
-                  </div>
-                </div>
-                <div className="price-slider-container">
-                  <input
-                    type="range"
-                    min="0"
-                    max={maxPrice}
-                    value={priceRange[0]}
-                    onChange={(e) => handleMinPriceChange(e.target.value)}
-                    className="price-slider price-slider-min"
-                  />
-                <input
-                  type="range"
-                  min="0"
-                    max={maxPrice}
-                  value={priceRange[1]}
-                    onChange={(e) => handleMaxPriceChange(e.target.value)}
-                    className="price-slider price-slider-max"
-                />
-                </div>
-                <div className="price-labels">
-                  <span>{formatKES(0)}</span>
-                  <span className="price-range-display">
-                    {formatKES(priceRange[0])} - {formatKES(priceRange[1])}
-                  </span>
-                  <span>{formatKES(maxPrice)}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={resetPriceRange}
-                  className="price-reset-btn"
-                >
-                  Reset Range
-                </button>
-              </div>
+              <PriceRangeFilter
+                priceRange={priceRange}
+                onMinChange={handleMinPriceChange}
+                onMaxChange={handleMaxPriceChange}
+                onReset={resetPriceRange}
+              />
             </div>
 
             <div className="filter-section">

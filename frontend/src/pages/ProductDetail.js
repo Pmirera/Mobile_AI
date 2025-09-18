@@ -23,10 +23,13 @@ const ProductDetail = () => {
   const fetchProduct = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/products/${id}`);
-      setProduct(response.data);
-      setSelectedVariant(response.data.variants?.[0] || null);
-      fetchRelatedProducts(response.data.category);
+      const response = await api.get(`/products/${id}`);
+      const prod = response.data?.product || response.data; // backend returns { product }
+      setProduct(prod);
+      setSelectedVariant(prod?.variants?.[0] || null);
+      if (prod?.category) {
+        fetchRelatedProducts(prod.category);
+      }
     } catch (error) {
       console.error('Error fetching product:', error);
       navigate('/products');
@@ -37,8 +40,9 @@ const ProductDetail = () => {
 
   const fetchRelatedProducts = async (category) => {
     try {
-      const response = await api.get(`/api/products?category=${category}&limit=4`);
-      setRelatedProducts(response.data.filter(p => p._id !== id));
+      const response = await api.get(`/products?category=${category}&limit=4`);
+      const list = response.data?.products || response.data || [];
+      setRelatedProducts(list.filter(p => p._id !== id));
     } catch (error) {
       console.error('Error fetching related products:', error);
     }
@@ -51,7 +55,6 @@ const ProductDetail = () => {
         variant: selectedVariant,
         quantity
       });
-      // Show success message or redirect to cart
       alert('Product added to cart!');
     }
   };
@@ -79,7 +82,13 @@ const ProductDetail = () => {
     );
   }
 
-  const images = product.images || [product.image];
+  const imageUrls = (product.images?.map(img => img?.url).filter(Boolean)) || (product.image ? [product.image] : []);
+  const images = imageUrls.length > 0 ? imageUrls : ['https://via.placeholder.com/500x500?text=No+Image'];
+
+  const ratingAverage = product.ratings?.average || 0;
+  const ratingCount = product.ratings?.count || product.reviews?.length || 0;
+  const inStock = product.inStock !== undefined ? product.inStock : (product.stockQuantity > 0);
+  const stockQty = product.stockQuantity ?? product.stock ?? 0;
 
   return (
     <div className="product-detail">
@@ -125,12 +134,12 @@ const ProductDetail = () => {
             <div className="product-rating">
               <div className="stars">
                 {[...Array(5)].map((_, i) => (
-                  <span key={i} className={i < (product.rating || 0) ? 'star filled' : 'star'}>
+                  <span key={i} className={i < Math.round(ratingAverage) ? 'star filled' : 'star'}>
                     ★
                   </span>
                 ))}
               </div>
-              <span className="rating-text">({product.reviews?.length || 0} reviews)</span>
+              <span className="rating-text">({ratingCount} reviews)</span>
             </div>
 
             <div className="product-price">
@@ -147,6 +156,71 @@ const ProductDetail = () => {
               <p>{product.description}</p>
             </div>
 
+            {/* Core details */}
+            <div className="product-core-details">
+              <h3>Details</h3>
+              <div className="details-grid">
+                <div><span className="label">Brand:</span> <span className="value">{product.brand || '—'}</span></div>
+                <div><span className="label">Model:</span> <span className="value">{product.model || '—'}</span></div>
+                <div><span className="label">SKU:</span> <span className="value">{product.sku || '—'}</span></div>
+                <div><span className="label">Category:</span> <span className="value">{product.category || '—'}</span></div>
+              </div>
+            </div>
+
+            {/* Specifications */}
+            {(product.specifications && Object.keys(product.specifications).length > 0) && (
+              <div className="product-specs">
+                <h3>Specifications</h3>
+                <div className="specs-grid">
+                  {product.specifications.screenSize && (
+                    <div><span className="label">Screen Size:</span> <span className="value">{product.specifications.screenSize}</span></div>
+                  )}
+                  {product.specifications.resolution && (
+                    <div><span className="label">Resolution:</span> <span className="value">{product.specifications.resolution}</span></div>
+                  )}
+                  {product.specifications.processor && (
+                    <div><span className="label">Processor:</span> <span className="value">{product.specifications.processor}</span></div>
+                  )}
+                  {product.specifications.ram && (
+                    <div><span className="label">RAM:</span> <span className="value">{product.specifications.ram}</span></div>
+                  )}
+                  {product.specifications.storage && (
+                    <div><span className="label">Storage:</span> <span className="value">{product.specifications.storage}</span></div>
+                  )}
+                  {product.specifications.camera && (
+                    <div><span className="label">Camera:</span> <span className="value">{product.specifications.camera}</span></div>
+                  )}
+                  {product.specifications.battery && (
+                    <div><span className="label">Battery:</span> <span className="value">{product.specifications.battery}</span></div>
+                  )}
+                  {product.specifications.operatingSystem && (
+                    <div><span className="label">OS:</span> <span className="value">{product.specifications.operatingSystem}</span></div>
+                  )}
+                  {Array.isArray(product.specifications.connectivity) && product.specifications.connectivity.length > 0 && (
+                    <div><span className="label">Connectivity:</span> <span className="value">{product.specifications.connectivity.join(', ')}</span></div>
+                  )}
+                  {Array.isArray(product.specifications.colors) && product.specifications.colors.length > 0 && (
+                    <div><span className="label">Colors:</span> <span className="value">{product.specifications.colors.join(', ')}</span></div>
+                  )}
+                  {product.specifications.weight && (
+                    <div><span className="label">Weight:</span> <span className="value">{product.specifications.weight}</span></div>
+                  )}
+                  {product.specifications.dimensions && (
+                    <div><span className="label">Dimensions:</span> <span className="value">{product.specifications.dimensions}</span></div>
+                  )}
+                  {Array.isArray(product.specifications.compatibility) && product.specifications.compatibility.length > 0 && (
+                    <div><span className="label">Compatibility:</span> <span className="value">{product.specifications.compatibility.join(', ')}</span></div>
+                  )}
+                  {product.specifications.material && (
+                    <div><span className="label">Material:</span> <span className="value">{product.specifications.material}</span></div>
+                  )}
+                  {product.specifications.warranty && (
+                    <div><span className="label">Warranty:</span> <span className="value">{product.specifications.warranty}</span></div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {product.variants && product.variants.length > 0 && (
               <div className="product-variants">
                 <h3>Variants:</h3>
@@ -157,7 +231,7 @@ const ProductDetail = () => {
                       className={`variant-btn ${selectedVariant === variant ? 'active' : ''}`}
                       onClick={() => setSelectedVariant(variant)}
                     >
-                      {variant.name}
+                      {variant.name || variant}
                     </button>
                   ))}
                 </div>
@@ -175,14 +249,14 @@ const ProductDetail = () => {
                 </button>
                 <span>{quantity}</span>
                 <button 
-                  onClick={() => setQuantity(quantity + 1)}
-                  disabled={quantity >= product.stock}
+                  onClick={() => setQuantity(Math.min((stockQty || 1), quantity + 1))}
+                  disabled={quantity >= stockQty}
                 >
                   +
                 </button>
               </div>
               <span className="stock-info">
-                {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                {inStock ? `${stockQty} in stock` : 'Out of stock'}
               </span>
             </div>
 
@@ -190,14 +264,14 @@ const ProductDetail = () => {
               <button 
                 className="add-to-cart-btn"
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={!inStock}
               >
                 Add to Cart
               </button>
               <button 
                 className="buy-now-btn"
                 onClick={handleBuyNow}
-                disabled={product.stock === 0}
+                disabled={!inStock}
               >
                 Buy Now
               </button>
@@ -206,13 +280,15 @@ const ProductDetail = () => {
             <div className="product-features">
               <h3>Key Features:</h3>
               <ul>
-                {product.features?.map((feature, index) => (
-                  <li key={index}>{feature}</li>
-                )) || (
+                {(product.features && product.features.length > 0) ? (
+                  product.features.map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                  ))
+                ) : (
                   <>
                     <li>High-quality materials</li>
                     <li>1-year warranty</li>
-                    <li>Free shipping</li>
+                    <li>Fast shipping</li>
                   </>
                 )}
                 
@@ -226,11 +302,10 @@ const ProductDetail = () => {
             <h2>Related Products</h2>
             <div className="related-grid">
               {relatedProducts.map(relatedProduct => (
-                <div key={relatedProduct._id} className="related-item">
+                <div key={relatedProduct._id} className="related-item" onClick={() => navigate(`/product/${relatedProduct._id}`)}>
                   <img 
-                    src={relatedProduct.image} 
+                    src={relatedProduct.images?.[0]?.url || relatedProduct.image || 'https://via.placeholder.com/200x200?text=No+Image'} 
                     alt={relatedProduct.name}
-                    onClick={() => navigate(`/product/${relatedProduct._id}`)}
                     onError={(e) => {
                       e.target.src = 'https://via.placeholder.com/200x200?text=No+Image';
                     }}

@@ -157,9 +157,10 @@ router.post('/chatbot', [
 
   } catch (error) {
     console.error('Chatbot error:', error);
+    const incomingConvId = (req && req.body && req.body.conversationId) ? req.body.conversationId : undefined;
     res.status(500).json({
       response: "I'm sorry, I'm having trouble processing your request right now. Please try again later or contact our support team.",
-      conversationId: conversationId || `conv_${Date.now()}`,
+      conversationId: incomingConvId || `conv_${Date.now()}`,
       timestamp: new Date().toISOString()
     });
   }

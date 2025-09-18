@@ -1,70 +1,85 @@
 import React, { useState } from 'react';
 import './AIFeatures.css';
+import { aiAPI } from '../services/api';
 
 const AIFeatures = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageDesc, setImageDesc] = useState('');
+  const [imageResults, setImageResults] = useState(null);
+
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
+  const [conversationId, setConversationId] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
 
-  const handleImageSearch = (e) => {
+  const [smartQuery, setSmartQuery] = useState('');
+  const [smartFilters, setSmartFilters] = useState(null);
+  const [trending, setTrending] = useState(null);
+  const [loadingImage, setLoadingImage] = useState(false);
+  const [loadingSmart, setLoadingSmart] = useState(false);
+  const [loadingTrending, setLoadingTrending] = useState(false);
+
+  const handleImageSearch = async (e) => {
     e.preventDefault();
-    // Placeholder for image search functionality
-    console.log('Image search:', searchQuery);
+    if (!imageUrl) return;
+    try {
+      setLoadingImage(true);
+      const res = await aiAPI.imageSearch(imageUrl, imageDesc);
+      setImageResults(res.data);
+    } catch (err) {
+      console.error('Image search error:', err);
+      setImageResults({ analysis: 'Unable to analyze image at this time', products: [] });
+    } finally {
+      setLoadingImage(false);
+    }
   };
 
-  const handleChatSubmit = (e) => {
+  const handleChatSubmit = async (e) => {
     e.preventDefault();
-    if (chatMessage.trim()) {
-      setChatHistory([...chatHistory, { type: 'user', message: chatMessage }]);
-      // Placeholder for AI chatbot response
-      setTimeout(() => {
-        setChatHistory(prev => [...prev, { 
-          type: 'bot', 
-          message: 'Thank you for your message! Our AI assistant is learning and will be available soon.' 
-        }]);
-      }, 1000);
+    if (!chatMessage.trim()) return;
+    const newHistory = [...chatHistory, { type: 'user', message: chatMessage }];
+    setChatHistory(newHistory);
+    setChatLoading(true);
+    try {
+      const res = await aiAPI.chatBot(chatMessage, conversationId || undefined);
+      setConversationId(res.data.conversationId);
+      setChatHistory([...newHistory, { type: 'bot', message: res.data.response }]);
+    } catch (err) {
+      console.error('Chatbot error:', err);
+      setChatHistory([...newHistory, { type: 'bot', message: 'Sorry, I had trouble responding. Please try again.' }]);
+    } finally {
       setChatMessage('');
+      setChatLoading(false);
     }
   };
 
-  const aiFeatures = [
-    {
-      title: "Smart Product Recommendations",
-      description: "Get personalized product suggestions based on your preferences and browsing history",
-      icon: "🎯",
-      status: "Coming Soon"
-    },
-    {
-      title: "AI-Powered Search",
-      description: "Find products using natural language queries and image recognition",
-      icon: "🔍",
-      status: "Coming Soon"
-    },
-    {
-      title: "Virtual Assistant",
-      description: "24/7 AI chatbot to help with product questions and support",
-      icon: "🤖",
-      status: "Coming Soon"
-    },
-    {
-      title: "Smart Filters",
-      description: "Advanced filtering using AI to understand your exact needs",
-      icon: "⚡",
-      status: "Coming Soon"
-    },
-    {
-      title: "Price Prediction",
-      description: "AI analyzes market trends to predict the best time to buy",
-      icon: "📈",
-      status: "Coming Soon"
-    },
-    {
-      title: "Visual Search",
-      description: "Upload an image to find similar products in our catalog",
-      icon: "📸",
-      status: "Coming Soon"
+  const handleSmartFilters = async (e) => {
+    e.preventDefault();
+    if (!smartQuery.trim()) return;
+    try {
+      setLoadingSmart(true);
+      const res = await aiAPI.smartFilters(smartQuery);
+      setSmartFilters(res.data);
+    } catch (err) {
+      console.error('Smart filters error:', err);
+      setSmartFilters(null);
+    } finally {
+      setLoadingSmart(false);
     }
-  ];
+  };
+
+  const handleTrending = async () => {
+    try {
+      setLoadingTrending(true);
+      const res = await aiAPI.getTrending();
+      setTrending(res.data.trendingProducts || res.data);
+    } catch (err) {
+      console.error('Trending error:', err);
+      setTrending([]);
+    } finally {
+      setLoadingTrending(false);
+    }
+  };
 
   return (
     <div className="ai-features">
@@ -74,33 +89,44 @@ const AIFeatures = () => {
           <p>Discover the future of mobile shopping with our cutting-edge AI features</p>
         </div>
 
-        <div className="features-grid">
-          {aiFeatures.map((feature, index) => (
-            <div key={index} className="feature-card">
-              <div className="feature-icon">{feature.icon}</div>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
-              <span className="status-badge">{feature.status}</span>
-            </div>
-          ))}
-        </div>
-
         <div className="demo-section">
           <div className="demo-card">
             <h2>Try Our AI Features</h2>
-            
+
             <div className="demo-item">
               <h3>🔍 Image Search</h3>
-              <p>Upload an image to find similar products</p>
+              <p>Paste an image URL to find similar products</p>
               <form onSubmit={handleImageSearch} className="search-form">
                 <input
-                  type="text"
-                  placeholder="Describe what you're looking for..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  type="url"
+                  placeholder="https://example.com/phone.jpg"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  required
                 />
-                <button type="submit">Search</button>
+                <input
+                  type="text"
+                  placeholder="Optional: describe the image"
+                  value={imageDesc}
+                  onChange={(e) => setImageDesc(e.target.value)}
+                />
+                <button type="submit" disabled={loadingImage}>{loadingImage ? 'Searching...' : 'Search'}</button>
               </form>
+              {imageResults && (
+                <div className="result-block">
+                  <h4>Analysis</h4>
+                  <p>{imageResults.analysis}</p>
+                  <h4>Similar Products</h4>
+                  <div className="products-row">
+                    {(imageResults.products || []).map((p) => (
+                      <div key={p._id} className="mini-card">
+                        <img src={p.images?.[0]?.url} alt={p.name} />
+                        <div className="mini-title">{p.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="demo-item">
@@ -122,31 +148,43 @@ const AIFeatures = () => {
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
                   />
-                  <button type="submit">Send</button>
+                  <button type="submit" disabled={chatLoading}>{chatLoading ? 'Sending...' : 'Send'}</button>
                 </form>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="coming-soon">
-          <h2>🚀 More AI Features Coming Soon</h2>
-          <div className="upcoming-features">
-            <div className="upcoming-item">
-              <h4>Voice Search</h4>
-              <p>Search products using voice commands</p>
+            <div className="demo-item">
+              <h3>🧠 Smart Filters</h3>
+              <p>Let AI suggest the best filters for your search</p>
+              <form onSubmit={handleSmartFilters} className="search-form">
+                <input
+                  type="text"
+                  placeholder="e.g. budget gaming phone with good battery"
+                  value={smartQuery}
+                  onChange={(e) => setSmartQuery(e.target.value)}
+                />
+                <button type="submit" disabled={loadingSmart}>{loadingSmart ? 'Thinking...' : 'Suggest'}</button>
+              </form>
+              {smartFilters && (
+                <div className="result-block">
+                  <pre>{JSON.stringify(smartFilters, null, 2)}</pre>
+                </div>
+              )}
             </div>
-            <div className="upcoming-item">
-              <h4>AR Try-On</h4>
-              <p>See how accessories look on you using AR</p>
-            </div>
-            <div className="upcoming-item">
-              <h4>Smart Notifications</h4>
-              <p>Get notified when your favorite products go on sale</p>
-            </div>
-            <div className="upcoming-item">
-              <h4>Personalized Deals</h4>
-              <p>AI-curated deals based on your preferences</p>
+
+            <div className="demo-item">
+              <h3>🔥 Trending (AI-analyzed)</h3>
+              <button onClick={handleTrending} disabled={loadingTrending}>{loadingTrending ? 'Loading...' : 'Load Trending'}</button>
+              {Array.isArray(trending) && (
+                <div className="products-row">
+                  {trending.map((p) => (
+                    <div key={p._id || p.product?._id} className="mini-card">
+                      <img src={(p.images?.[0]?.url) || (p.product?.images?.[0]?.url)} alt={p.name || p.product?.name} />
+                      <div className="mini-title">{p.name || p.product?.name}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

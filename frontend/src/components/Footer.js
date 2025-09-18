@@ -46,10 +46,10 @@ const Footer = () => {
   };
 
   const socialLinks = [
-    { name: 'Facebook', icon: Facebook, href: '#' },
-    { name: 'Twitter', icon: Twitter, href: '#' },
-    { name: 'Instagram', icon: Instagram, href: '#' },
-    { name: 'YouTube', icon: Youtube, href: '#' },
+    { name: 'Facebook', icon: Facebook, href: 'https://facebook.com' },
+    { name: 'Twitter', icon: Twitter, href: 'https://x.com' },
+    { name: 'Instagram', icon: Instagram, href: 'https://instagram.com' },
+    { name: 'YouTube', icon: Youtube, href: 'https://youtube.com' },
   ];
 
   return (
@@ -165,14 +165,14 @@ const Footer = () => {
               <Phone className="w-5 h-5 text-blue-400" />
               <div>
                 <p className="text-sm text-gray-400">Phone</p>
-                <p className="text-white">+1 (555) 123-4567</p>
+                <p className="text-white">+254712 345 678</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <MapPin className="w-5 h-5 text-blue-400" />
               <div>
                 <p className="text-sm text-gray-400">Address</p>
-                <p className="text-white">123 Tech Street, Silicon Valley, CA</p>
+                <p className="text-white">123 Moi Avenue Street, Nairobi, Kenya</p>
               </div>
             </div>
           </div>
