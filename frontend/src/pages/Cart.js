@@ -1,3 +1,4 @@
+import { formatKES } from '../utils/currency';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
@@ -48,7 +49,7 @@ const Cart = () => {
   };
 
   const calculateShipping = () => {
-    return calculateSubtotal() > 100 ? 0 : 10; // Free shipping over $100
+    return calculateSubtotal() > 15000 ? 0 : 1000; // Free shipping over KES 15,000
   };
 
   const calculateTotal = () => {
@@ -100,7 +101,7 @@ const Cart = () => {
                   {item.variant && (
                     <p className="item-variant">Variant: {item.variant.name}</p>
                   )}
-                  <p className="item-price">${item.price}</p>
+                  <p className="item-price">{formatKES(item.price)}</p>
                 </div>
 
                 <div className="item-quantity">
@@ -122,7 +123,7 @@ const Cart = () => {
                 </div>
 
                 <div className="item-total">
-                  <p className="total-price">${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="total-price">{formatKES(item.price * item.quantity)}</p>
                 </div>
 
                 <div className="item-actions">
@@ -156,30 +157,30 @@ const Cart = () => {
               
               <div className="summary-row">
                 <span>Subtotal:</span>
-                <span>${calculateSubtotal().toFixed(2)}</span>
+                <span>{formatKES(calculateSubtotal())}</span>
               </div>
               
               <div className="summary-row">
                 <span>Tax:</span>
-                <span>${calculateTax().toFixed(2)}</span>
+                <span>{formatKES(calculateTax())}</span>
               </div>
               
               <div className="summary-row">
                 <span>Shipping:</span>
                 <span>
-                  {calculateShipping() === 0 ? 'FREE' : `$${calculateShipping().toFixed(2)}`}
+                  {calculateShipping() === 0 ? 'FREE' : formatKES(calculateShipping())}
                 </span>
               </div>
               
               {calculateSubtotal() < 100 && (
                 <div className="shipping-note">
-                  <p>Add ${(100 - calculateSubtotal()).toFixed(2)} more for free shipping!</p>
+                  <p>Add {formatKES(15000 - calculateSubtotal())} more for free shipping!</p>
                 </div>
               )}
               
               <div className="summary-row total">
                 <span>Total:</span>
-                <span>${calculateTotal().toFixed(2)}</span>
+                <span>{formatKES(calculateTotal())}</span>
               </div>
 
               <button 
@@ -208,7 +209,7 @@ const Cart = () => {
             <div className="shipping-info">
               <h4>🚚 Shipping Information</h4>
               <ul>
-                <li>Free shipping on orders over $100</li>
+                <li>Free shipping on orders over KES 15,000</li>
                 <li>Standard shipping: 3-5 business days</li>
                 <li>Express shipping: 1-2 business days</li>
                 <li>International shipping available</li>

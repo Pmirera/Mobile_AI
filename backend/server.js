@@ -48,6 +48,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/payments', require('./routes/payments'));
 // Mount AI routes only if OPENAI_API_KEY is configured to avoid startup errors
 if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim() !== '') {
   app.use('/api/ai', require('./routes/ai'));

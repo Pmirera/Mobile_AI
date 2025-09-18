@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import api, { productsAPI } from '../services/api';
+import { productsAPI, paymentsAPI, ordersAPI } from '../services/api';
+import { formatKES } from '../utils/currency';
 import './Checkout.css';
 
 const Checkout = () => {
@@ -86,9 +87,9 @@ const Checkout = () => {
 
   const calculateShipping = () => {
     const shippingRates = {
-      standard: calculateSubtotal() > 100 ? 0 : 10,
-      express: 25,
-      overnight: 50
+      standard: calculateSubtotal() > 15000 ? 0 : 1000,
+      express: 2500,
+      overnight: 5000
     };
     return shippingRates[orderData.shipping.method];
   };
@@ -102,7 +103,7 @@ const Checkout = () => {
       case 1:
         const shipping = orderData.shippingAddress;
         return shipping.firstName && shipping.lastName && shipping.street && 
-               shipping.city && shipping.state && shipping.zipCode;
+               shipping.city && shipping.state && shipping.zipCode && shipping.country;
       case 2:
         const payment = orderData.payment;
         if (payment.method === 'card') {
@@ -171,7 +172,7 @@ const Checkout = () => {
           cardLast4: orderData.payment.cardNumber.slice(-4),
           cardBrand: 'Visa' // You can detect this based on card number
         } : {
-          transactionId: null // Will be set when MPesa payment is processed
+          transactionId: null // Will be set to CheckoutRequestID after STK push
         }
       };
 
@@ -197,18 +198,47 @@ const Checkout = () => {
         }
       }
 
-      const response = await api.post('/api/orders', orderPayload);
+      if (orderData.payment.method === 'mpesa') {
+        try {
+          const stkAmount = Number(calculateTotal().toFixed(0));
+          const phone = orderData.payment.mpesaPhone;
+          console.log('Initiating M-Pesa STK Push:', { stkAmount, phone });
+          const stkResp = await paymentsAPI.initiateMpesaStkPush({
+            amount: stkAmount,
+            phone,
+            accountReference: 'ORDER',
+            description: 'Order Payment'
+          });
+          console.log('STK Push response:', stkResp.data);
+          // Persist CheckoutRequestID onto order payload for callback mapping
+          const checkoutId = stkResp?.data?.data?.CheckoutRequestID || stkResp?.data?.CheckoutRequestID;
+          if (checkoutId) {
+            paymentMethod.details.transactionId = checkoutId;
+          }
+          alert('We sent an MPesa prompt to your phone. Please enter your PIN to approve the payment.');
+        } catch (mpesaErr) {
+          console.error('Failed to initiate M-Pesa STK Push:', mpesaErr.response?.data || mpesaErr.message);
+          // Show detailed Daraja error if available
+          const details = mpesaErr.response?.data?.details || mpesaErr.response?.data?.error?.errorMessage || mpesaErr.response?.data?.errorMessage;
+          throw new Error(details || 'Failed to initiate STK Push');
+        }
+      }
+
+      const response = await ordersAPI.createOrder(orderPayload);
       console.log('Order response:', response.data);
-      
+      const orderId = response.data?.order?._id || response.data?._id;
       clearCart();
-      navigate(`/order-confirmation/${response.data._id}`);
+      navigate(`/order-confirmation/${orderId}`);
     } catch (error) {
       console.error('Error placing order:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
-      
-      const errorMessage = error.response?.data?.message || 'Error placing order. Please try again.';
-      alert(errorMessage);
+      const backendMsg = error.response?.data?.message;
+      const validationErrors = error.response?.data?.errors;
+      const detailed = Array.isArray(validationErrors) && validationErrors.length
+        ? validationErrors.map(e => e.msg).join(', ')
+        : (typeof backendMsg === 'string' ? backendMsg : null);
+      alert(detailed || error.message || 'Error placing order. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -329,9 +359,9 @@ const Checkout = () => {
                     value={orderData.shipping.method}
                     onChange={(e) => handleInputChange('shipping', 'method', e.target.value)}
                   >
-                    <option value="standard">Standard (3-5 days) - {calculateSubtotal() > 100 ? 'FREE' : '$10'}</option>
-                    <option value="express">Express (1-2 days) - $25</option>
-                    <option value="overnight">Overnight - $50</option>
+                    <option value="standard">Standard (3-5 days) - {calculateSubtotal() > 15000 ? 'FREE' : formatKES(1000)}</option>
+                    <option value="express">Express (1-2 days) - {formatKES(2500)}</option>
+                    <option value="overnight">Overnight - {formatKES(5000)}</option>
                   </select>
                 </div>
 
@@ -577,7 +607,7 @@ const Checkout = () => {
                           <div>
                             <h4>{item.name}</h4>
                             <p>Quantity: {item.quantity}</p>
-                            <p>${(item.price * item.quantity).toFixed(2)}</p>
+                            <p>{formatKES(item.price * item.quantity)}</p>
                           </div>
                         </div>
                       ))}
@@ -610,24 +640,24 @@ const Checkout = () => {
               
               <div className="summary-row">
                 <span>Subtotal:</span>
-                <span>${calculateSubtotal().toFixed(2)}</span>
+                <span>{formatKES(calculateSubtotal())}</span>
               </div>
               
               <div className="summary-row">
                 <span>Tax:</span>
-                <span>${calculateTax().toFixed(2)}</span>
+                <span>{formatKES(calculateTax())}</span>
               </div>
               
               <div className="summary-row">
                 <span>Shipping:</span>
                 <span>
-                  {calculateShipping() === 0 ? 'FREE' : `$${calculateShipping().toFixed(2)}`}
+                  {calculateShipping() === 0 ? 'FREE' : formatKES(calculateShipping())}
                 </span>
               </div>
               
               <div className="summary-row total">
                 <span>Total:</span>
-                <span>${calculateTotal().toFixed(2)}</span>
+                <span>{formatKES(calculateTotal())}</span>
               </div>
             </div>
 

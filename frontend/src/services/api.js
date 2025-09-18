@@ -123,4 +123,10 @@ export const uploadAPI = {
   deleteImage: (filename) => api.delete(`/upload/image/${filename}`)
 };
 
+// Payments API
+export const paymentsAPI = {
+  initiateMpesaStkPush: ({ amount, phone, accountReference, description }) =>
+    api.post('/payments/mpesa/stkpush', { amount, phone, accountReference, description }),
+};
+
 export default api;

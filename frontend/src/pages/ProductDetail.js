@@ -1,3 +1,4 @@
+import { formatKES } from '../utils/currency';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
@@ -133,9 +134,9 @@ const ProductDetail = () => {
             </div>
 
             <div className="product-price">
-              <span className="current-price">${product.price}</span>
+              <span className="current-price">{formatKES(product.price)}</span>
               {product.originalPrice && product.originalPrice > product.price && (
-                <span className="original-price">${product.originalPrice}</span>
+                <span className="original-price">{formatKES(product.originalPrice)}</span>
               )}
               {product.discount && (
                 <span className="discount-badge">{product.discount}% OFF</span>
@@ -235,7 +236,7 @@ const ProductDetail = () => {
                     }}
                   />
                   <h4>{relatedProduct.name}</h4>
-                  <p>${relatedProduct.price}</p>
+                  <p>{formatKES(relatedProduct.price)}</p>
                 </div>
               ))}
             </div>

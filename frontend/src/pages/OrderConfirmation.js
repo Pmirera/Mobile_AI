@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { formatKES } from '../utils/currency';
 import './OrderConfirmation.css';
 
 const OrderConfirmation = () => {
@@ -82,7 +83,7 @@ const OrderConfirmation = () => {
             </div>
             <div className="info-row">
               <span>Total Amount:</span>
-              <span className="total">${order.pricing.total.toFixed(2)}</span>
+              <span className="total">{formatKES(order.pricing.total)}</span>
             </div>
           </div>
 
@@ -114,10 +115,10 @@ const OrderConfirmation = () => {
                 <div className="item-details">
                   <h4>{item.name}</h4>
                   <p>Quantity: {item.quantity}</p>
-                  <p>Price: ${item.price.toFixed(2)}</p>
+                  <p>Price: {formatKES(item.price)}</p>
                 </div>
                 <div className="item-total">
-                  ${(item.price * item.quantity).toFixed(2)}
+                  {formatKES(item.price * item.quantity)}
                 </div>
               </div>
             ))}
@@ -127,19 +128,19 @@ const OrderConfirmation = () => {
         <div className="order-summary">
           <div className="summary-row">
             <span>Subtotal:</span>
-            <span>${order.pricing.subtotal.toFixed(2)}</span>
+            <span>{formatKES(order.pricing.subtotal)}</span>
           </div>
           <div className="summary-row">
             <span>Tax:</span>
-            <span>${order.pricing.tax.toFixed(2)}</span>
+            <span>{formatKES(order.pricing.tax)}</span>
           </div>
           <div className="summary-row">
             <span>Shipping:</span>
-            <span>{order.pricing.shipping === 0 ? 'FREE' : `$${order.pricing.shipping.toFixed(2)}`}</span>
+            <span>{order.pricing.shipping === 0 ? 'FREE' : formatKES(order.pricing.shipping)}</span>
           </div>
           <div className="summary-row total">
             <span>Total:</span>
-            <span>${order.pricing.total.toFixed(2)}</span>
+            <span>{formatKES(order.pricing.total)}</span>
           </div>
         </div>
 

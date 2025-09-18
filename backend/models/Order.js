@@ -55,7 +55,9 @@ const orderSchema = new mongoose.Schema({
     details: {
       cardLast4: String,
       cardBrand: String,
-      transactionId: String
+      transactionId: String, // For MPesa: CheckoutRequestID
+      receipt: String, // MpesaReceiptNumber
+      phone: String // Payer phone
     }
   },
   pricing: {

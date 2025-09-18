@@ -140,15 +140,21 @@ const ProductForm = ({ product, onClose }) => {
 
     setUploading(true);
     try {
-      const formData = new FormData();
+      const uploadFormData = new FormData();
       selectedFiles.forEach(file => {
-        formData.append('images', file);
+        uploadFormData.append('images', file);
       });
 
-      const response = await uploadAPI.uploadImages(formData);
+      const response = await uploadAPI.uploadImages(uploadFormData);
       
-      const newImages = response.data.images.map(img => ({
-        url: img.url,
+      // Handle different response structures
+      const images = response.data?.images || response.data?.imageUrls || [];
+      if (!Array.isArray(images)) {
+        throw new Error('Invalid response format from server');
+      }
+      
+      const newImages = images.map(img => ({
+        url: img.url || img.imageUrl,
         alt: formData.name || 'Product image',
         isPrimary: formData.images.length === 0
       }));
@@ -159,10 +165,16 @@ const ProductForm = ({ product, onClose }) => {
       }));
 
       setSelectedFiles([]);
-      toast.success(`${response.data.images.length} image(s) uploaded successfully`);
+      toast.success(`${images.length} image(s) uploaded successfully`);
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload images');
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to upload images';
+      console.error('Upload error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: errorMsg
+      });
+      toast.error(`Upload failed: ${errorMsg}`);
     } finally {
       setUploading(false);
     }

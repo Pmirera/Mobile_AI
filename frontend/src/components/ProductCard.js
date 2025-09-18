@@ -1,3 +1,4 @@
+import { formatKES } from '../utils/currency';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -166,11 +167,11 @@ const ProductCard = ({ product }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className="text-lg font-bold text-gray-900">
-                  ${product.price}
+                  {formatKES(product.price)}
                 </span>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <span className="text-sm text-gray-500 line-through">
-                    ${product.originalPrice}
+                    {formatKES(product.originalPrice)}
                   </span>
                 )}
               </div>

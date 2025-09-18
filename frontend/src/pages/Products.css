@@ -91,13 +91,55 @@
   margin-top: 1rem;
 }
 
+.price-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.price-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.price-input-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.price-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.price-slider-container {
+  position: relative;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
 .price-slider {
+  position: absolute;
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: #e0e0e0;
+  background: transparent;
   outline: none;
   -webkit-appearance: none;
+  pointer-events: none;
 }
 
 .price-slider::-webkit-slider-thumb {
@@ -108,6 +150,9 @@
   border-radius: 50%;
   background: linear-gradient(45deg, #667eea, #764ba2);
   cursor: pointer;
+  pointer-events: all;
+  position: relative;
+  z-index: 2;
 }
 
 .price-slider::-moz-range-thumb {
@@ -117,14 +162,80 @@
   background: linear-gradient(45deg, #667eea, #764ba2);
   cursor: pointer;
   border: none;
+  pointer-events: all;
+  position: relative;
+  z-index: 2;
+}
+
+.price-slider-min {
+  z-index: 1;
+}
+
+.price-slider-max {
+  z-index: 0;
+}
+
+.price-slider-container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+.price-slider-container::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: calc(var(--min-percent, 0) * 1%);
+  right: calc(100% - var(--max-percent, 100) * 1%);
+  height: 6px;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  border-radius: 3px;
+  transform: translateY(-50%);
+  z-index: 1;
 }
 
 .price-labels {
   display: flex;
   justify-content: space-between;
-  margin-top: 0.5rem;
+  align-items: center;
+  margin-top: 1rem;
   font-size: 0.9rem;
   color: #666;
+}
+
+.price-range-display {
+  font-weight: 600;
+  color: #333;
+  background: #f8f9ff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.price-reset-btn {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  color: #666;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.price-reset-btn:hover {
+  background: #e9ecef;
+  border-color: #667eea;
+  color: #333;
 }
 
 .sort-select {

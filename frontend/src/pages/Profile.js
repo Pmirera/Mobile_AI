@@ -1,3 +1,4 @@
+import { formatKES } from '../utils/currency';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -296,7 +297,7 @@ const Profile = () => {
                         </div>
                         <div className="order-details">
                           <p>Date: {new Date(order.createdAt).toLocaleDateString()}</p>
-                          <p>Total: ${order.totalAmount}</p>
+                          <p>Total: {formatKES(order.totalAmount)}</p>
                           <p>Items: {order.items.length}</p>
                         </div>
                         <div className="order-items">
@@ -306,7 +307,7 @@ const Profile = () => {
                               <div>
                                 <h5>{item.product.name}</h5>
                                 <p>Quantity: {item.quantity}</p>
-                                <p>Price: ${item.price}</p>
+                                <p>Price: {formatKES(item.price)}</p>
                               </div>
                             </div>
                           ))}
